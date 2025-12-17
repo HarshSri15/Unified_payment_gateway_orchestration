@@ -1,18 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Home from "@/pages/Home";
 import Payments from "@/pages/Payments";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import PaymentSuccess from "@/pages/PaymentSuccess";
-import PaymentFailure from "@/pages/PaymentFailure";
 import Dashboard from "@/pages/Dashboard";
 import OauthHandler from "@/pages/OauthHandler";
-
-// NEW unified Auth Page
+import PaymentSuccess from "@/pages/PaymentSuccess";
+import PaymentFailure from "@/pages/PaymentFailure";
 import AuthPage from "@/pages/AuthPage";
 
-// NEW project wizard import
+import ProjectsHub from "@/pages/projects/ProjectsHub";
 import CreateProjectWizard from "@/pages/projects/CreateProjectWizard";
 
 function App() {
@@ -22,21 +20,18 @@ function App() {
         <Navbar />
 
         <Routes>
-          {/* Public Routes */}
+          {/* Public */}
           <Route path="/" element={<Home />} />
-
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/register" element={<Navigate to="/auth" replace />} />
-
-          {/* OAuth */}
           <Route path="/oauth" element={<OauthHandler />} />
 
-          {/* Payment Redirect Pages */}
+          {/* Payment Redirects */}
           <Route path="/payments/success" element={<PaymentSuccess />} />
           <Route path="/payments/failure" element={<PaymentFailure />} />
 
-          {/* Protected Pages */}
+          {/* Protected */}
           <Route
             path="/payments"
             element={
@@ -55,23 +50,31 @@ function App() {
             }
           />
 
-         
-          {/* Redirect /projects → /projects/create */}
+          {/* ✅ PROJECTS HUB (PARENT ROUTE) */}
           <Route
             path="/projects"
-            element={<Navigate to="/projects/create" replace />}
-          />
-
-          {/* The multi-step wizard */}
-          <Route
-            path="/projects/create"
             element={
               <ProtectedRoute>
-                <CreateProjectWizard />
+                <ProjectsHub />
               </ProtectedRoute>
             }
-          />
+          >
+            {/* Default empty state */}
+            <Route
+              index
+              element={
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  Select a project to continue
+                </div>
+              }
+            />
 
+            {/* Project dashboard */}
+            <Route path=":projectId" element={<Dashboard />} />
+
+            {/* Create project wizard */}
+            <Route path="create" element={<CreateProjectWizard />} />
+          </Route>
         </Routes>
       </div>
     </Router>
@@ -79,5 +82,3 @@ function App() {
 }
 
 export default App;
-
-
