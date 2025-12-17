@@ -1,7 +1,8 @@
+// frontend/src/pages/projects/ProjectsHub.jsx
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import api from "@/api";
-import ProjectSidebar from "@/components/projectSidebar";
+import ProjectSidebar from "@/components/ProjectSidebar";
 
 export default function ProjectsHub() {
   const navigate = useNavigate();
@@ -11,17 +12,20 @@ export default function ProjectsHub() {
   const [loading, setLoading] = useState(true);
   const [activeProject, setActiveProject] = useState(null);
 
-  // Fetch all projects
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         const res = await api.get("/api/projects");
-        const list = res.data?.data || [];
+
+        // 🔒 Normalize response
+        const list = Array.isArray(res.data?.data)
+          ? res.data.data
+          : res.data?.data?.projects || [];
 
         setProjects(list);
 
         if (projectId) {
-          const found = list.find((p) => p._id === projectId);
+          const found = list.find(p => p._id === projectId);
           setActiveProject(found || null);
         }
       } catch (err) {
@@ -37,7 +41,7 @@ export default function ProjectsHub() {
 
   const handleSelectProject = (project) => {
     setActiveProject(project);
-    navigate(`/projects/${project._id}`); // ✅ FIXED
+    navigate(`/projects/${project._id}`);
   };
 
   const handleCreateProject = () => {
@@ -50,7 +54,6 @@ export default function ProjectsHub() {
 
   return (
     <div className="flex h-[calc(100vh-120px)]">
-      {/* Sidebar */}
       <ProjectSidebar
         projects={projects}
         activeProject={activeProject}
@@ -58,14 +61,8 @@ export default function ProjectsHub() {
         onCreateProject={handleCreateProject}
       />
 
-      {/* Main content */}
       <div className="flex-1 bg-gray-50 p-6 overflow-auto">
-        <Outlet
-          context={{
-            project: activeProject,
-            projects,
-          }}
-        />
+        <Outlet context={{ project: activeProject, projects }} />
       </div>
     </div>
   );

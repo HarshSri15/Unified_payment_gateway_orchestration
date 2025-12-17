@@ -4,7 +4,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Home from "@/pages/Home";
 import Payments from "@/pages/Payments";
-import Dashboard from "@/pages/Dashboard";
+import Dashboard from "@/pages/Dashboard"; // GLOBAL dashboard
 import OauthHandler from "@/pages/OauthHandler";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentFailure from "@/pages/PaymentFailure";
@@ -12,6 +12,10 @@ import AuthPage from "@/pages/AuthPage";
 
 import ProjectsHub from "@/pages/projects/ProjectsHub";
 import CreateProjectWizard from "@/pages/projects/CreateProjectWizard";
+
+// ✅ PROJECT WORKSPACE PAGES
+import ProjectDashboard from "@/pages/project-workspace/Dashboard";
+import TestPayment from "@/pages/project-workspace/TestPayment";
 
 function App() {
   return (
@@ -31,7 +35,7 @@ function App() {
           <Route path="/payments/success" element={<PaymentSuccess />} />
           <Route path="/payments/failure" element={<PaymentFailure />} />
 
-          {/* Protected */}
+          {/* Global protected pages */}
           <Route
             path="/payments"
             element={
@@ -50,7 +54,7 @@ function App() {
             }
           />
 
-          {/* ✅ PROJECTS HUB (PARENT ROUTE) */}
+          {/* ✅ PROJECTS WORKSPACE */}
           <Route
             path="/projects"
             element={
@@ -59,18 +63,21 @@ function App() {
               </ProtectedRoute>
             }
           >
-            {/* Default empty state */}
+            {/* Empty state */}
             <Route
               index
               element={
                 <div className="flex items-center justify-center h-full text-gray-400">
-                  Select a project to continue
+                  Select a project to view its dashboard
                 </div>
               }
             />
 
-            {/* Project dashboard */}
-            <Route path=":projectId" element={<Dashboard />} />
+            {/* ✅ PROJECT DASHBOARD */}
+            <Route path=":projectId" element={<ProjectDashboard />} />
+
+            {/* Test payment (project scoped) */}
+            <Route path=":projectId/test-payment" element={<TestPayment />} />
 
             {/* Create project wizard */}
             <Route path="create" element={<CreateProjectWizard />} />
