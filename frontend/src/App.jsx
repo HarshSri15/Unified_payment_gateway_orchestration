@@ -10,10 +10,12 @@ import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentFailure from "@/pages/PaymentFailure";
 import AuthPage from "@/pages/AuthPage";
 
+// Projects
 import ProjectsHub from "@/pages/projects/ProjectsHub";
 import CreateProjectWizard from "@/pages/projects/CreateProjectWizard";
 
-// ✅ PROJECT WORKSPACE PAGES
+// Project workspace
+import ProjectLayout from "@/layouts/ProjectLayout";
 import ProjectDashboard from "@/pages/project-workspace/Dashboard";
 import TestPayment from "@/pages/project-workspace/TestPayment";
 
@@ -24,18 +26,18 @@ function App() {
         <Navbar />
 
         <Routes>
-          {/* Public */}
+          {/* ================= PUBLIC ================= */}
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/register" element={<Navigate to="/auth" replace />} />
           <Route path="/oauth" element={<OauthHandler />} />
 
-          {/* Payment Redirects */}
+          {/* ================= PAYMENT REDIRECTS ================= */}
           <Route path="/payments/success" element={<PaymentSuccess />} />
           <Route path="/payments/failure" element={<PaymentFailure />} />
 
-          {/* Global protected pages */}
+          {/* ================= GLOBAL PROTECTED ================= */}
           <Route
             path="/payments"
             element={
@@ -54,7 +56,7 @@ function App() {
             }
           />
 
-          {/* ✅ PROJECTS WORKSPACE */}
+          {/* ================= PROJECTS ================= */}
           <Route
             path="/projects"
             element={
@@ -62,25 +64,31 @@ function App() {
                 <ProjectsHub />
               </ProtectedRoute>
             }
+          />
+
+          <Route
+            path="/projects/create"
+            element={
+              <ProtectedRoute>
+                <CreateProjectWizard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ================= PROJECT WORKSPACE ================= */}
+          <Route
+            path="/projects/:projectId"
+            element={
+              <ProtectedRoute>
+                <ProjectLayout />
+              </ProtectedRoute>
+            }
           >
-            {/* Empty state */}
-            <Route
-              index
-              element={
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  Select a project to view its dashboard
-                </div>
-              }
-            />
+            {/* Default = dashboard */}
+            <Route index element={<ProjectDashboard />} />
 
-            {/* ✅ PROJECT DASHBOARD */}
-            <Route path=":projectId" element={<ProjectDashboard />} />
-
-            {/* Test payment (project scoped) */}
-            <Route path=":projectId/test-payment" element={<TestPayment />} />
-
-            {/* Create project wizard */}
-            <Route path="create" element={<CreateProjectWizard />} />
+            {/* Test payment */}
+            <Route path="test-payment" element={<TestPayment />} />
           </Route>
         </Routes>
       </div>
