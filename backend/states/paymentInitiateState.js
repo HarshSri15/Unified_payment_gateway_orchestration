@@ -12,13 +12,18 @@ export const paymentInitiateState = async (input) => {
     redirect,
     meta = {},
     userId,
+    projectId, // ✅ ACCEPT projectId
     config,
   } = input;
 
-  // ✅ Step 1: Add logging to see what's being received
-  console.log('📥 Payment initiate input:', JSON.stringify(input, null, 2));
+  // --------------------------------------------------
+  // DEBUG LOG (keep this for now)
+  // --------------------------------------------------
+  console.log("📥 Payment initiate input:", JSON.stringify(input, null, 2));
 
-  // ✅ Step 2: Basic validation
+  // --------------------------------------------------
+  // BASIC VALIDATION
+  // --------------------------------------------------
   if (!gateway || !amount || !customer?.email) {
     throw new ApiError(400, "Missing required payment fields");
   }
@@ -27,13 +32,18 @@ export const paymentInitiateState = async (input) => {
     throw new ApiError(400, "userId is required for transaction creation");
   }
 
-  // ✅ Step 3: Gateway-specific validation (NEW - Solution 3)
+  if (!projectId) {
+    throw new ApiError(400, "projectId is required for transaction creation");
+  }
+
+  // --------------------------------------------------
+  // GATEWAY-SPECIFIC VALIDATION
+  // --------------------------------------------------
   if (gateway === "cashfree") {
     if (!customer?.phone) {
       throw new ApiError(400, "Phone number is required for Cashfree payments");
     }
-    
-    // Optional: Validate phone format early
+
     const phoneDigits = customer.phone.replace(/\D/g, "");
     if (phoneDigits.length < 10) {
       throw new ApiError(400, "Phone number must be at least 10 digits");
@@ -43,24 +53,29 @@ export const paymentInitiateState = async (input) => {
   const { ok, adapter } = gatewayFactory(gateway);
   if (!ok) throw new ApiError(400, "Unsupported gateway");
 
-  // ✅ Step 4: Create DB transaction with better defaults
+  // --------------------------------------------------
+  // ✅ CREATE TRANSACTION (FIX IS HERE)
+  // --------------------------------------------------
   const transaction = await Transaction.create({
     userId,
+    project: projectId, // 🔥 REQUIRED FIX
     gateway,
     amount,
     currency,
     status: "pending",
     customer: {
-      name: customer.name || "Customer",  // ✅ Changed from "N/A"
-      email: customer.email || "",         // ✅ Changed from "N/A"
-      phone: customer.phone || "",         // ✅ Changed from "N/A"
+      name: customer.name || "Customer",
+      email: customer.email || "",
+      phone: customer.phone || "",
     },
     meta,
     initiatedAt: new Date(),
     transactionId: null,
   });
 
-  // ✅ Step 5: Prepare standardized adapter input (already correct)
+  // --------------------------------------------------
+  // ADAPTER INPUT
+  // --------------------------------------------------
   const adapterInput = {
     amount,
     currency,
@@ -79,7 +94,6 @@ export const paymentInitiateState = async (input) => {
     config: config || {},
   };
 
-  // Adapter handles everything gateway-specific
   const result = await adapter.initiatePayment(adapterInput);
 
   if (!result.ok) {
@@ -89,9 +103,9 @@ export const paymentInitiateState = async (input) => {
     throw new ApiError(500, result.message || "Gateway initiate error");
   }
 
-  // ---------------------------------------------------
-  // SPECIAL CASE: CASHFREE (store link_id + order_id)
-  // ---------------------------------------------------
+  // --------------------------------------------------
+  // CASHFREE SPECIAL HANDLING
+  // --------------------------------------------------
   if (gateway === "cashfree") {
     const raw = result.data?.raw || {};
     const linkId = raw.link_id || result.data?.gatewayOrderId || "";
@@ -103,11 +117,8 @@ export const paymentInitiateState = async (input) => {
 
     transaction.cashfreeLinkId = linkId;
     transaction.cashfreeOrderId = orderId;
-
-    // keep gatewayOrderId = link_id for compatibility
     transaction.gatewayOrderId = linkId;
   } else {
-    // default for all other gateways
     transaction.gatewayOrderId =
       result.data?.gatewayOrderId ||
       result.data?.orderId ||
@@ -115,18 +126,40 @@ export const paymentInitiateState = async (input) => {
       transaction._id.toString();
   }
 
-  // always store our own transaction reference
   transaction.transactionId = transaction._id.toString();
-
   await transaction.save();
 
+// -----------------------------
+// RETURN DATA FOR FRONTEND
+// -----------------------------
+if (gateway === "razorpay") {
   return {
     ok: true,
     success: true,
-    message: "Payment initiation successful",
+    message: "Razorpay order created",
     data: {
       transactionId: transaction._id.toString(),
-      ...result.data,
+      razorpayOrderId:
+        result.data?.gatewayOrderId ||
+        result.data?.orderId ||
+        result.data?.id,
+      key:
+        process.env.RAZORPAY_KEY_ID ||
+        process.env.RAZORPAY_TEST_API_KEY,
     },
   };
+}
+
+// Default (PayU, Cashfree, PayPal, etc.)
+return {
+  ok: true,
+  success: true,
+  message: "Payment initiation successful",
+  data: {
+    transactionId: transaction._id.toString(),
+    ...result.data,
+  },
+};
+
+
 };

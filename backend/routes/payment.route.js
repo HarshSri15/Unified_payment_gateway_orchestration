@@ -14,17 +14,21 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Public
-router.post("/initiate", initiatePayment);
+// 🔐 AUTH REQUIRED
+router.post("/initiate", protect, initiatePayment);
+
+// Gateway callbacks
 router.post("/callback/:gateway", verifyPayment);
+
+// Public (invoice / success page)
 router.get("/transaction/:id", getTransaction);
 
-// Auth
+// Authenticated
 router.get("/", protect, getAllPayments);
 router.delete("/transaction/:id", protect, deleteTransaction);
 router.post("/refund", protect, refundPayment);
 
-// Dev helpers (blocked in production by controller)
+// Dev helpers
 router.get("/health/razorpay", razorpayHealth);
 router.post("/debug/razorpay-signature", razorpayDebugSignature);
 

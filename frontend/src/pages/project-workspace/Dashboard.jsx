@@ -1,35 +1,9 @@
-// src/pages/project-workspace/Dashboard.jsx
-import { useEffect, useState } from "react";
-import { useParams, useOutletContext } from "react-router-dom";
-import api from "@/api/axios";
+import { useOutletContext, Link } from "react-router-dom";
 
 export default function ProjectDashboard() {
-  const { projectId } = useParams();
-  const outletContext = useOutletContext();
-  const contextProject = outletContext?.project;
+  const { project } = useOutletContext() || {};
 
-  const [project, setProject] = useState(contextProject || null);
-  const [loading, setLoading] = useState(!contextProject);
-
-  // ✅ Fallback fetch if context not ready
-  useEffect(() => {
-    if (contextProject) return;
-
-    const fetchProject = async () => {
-      try {
-        const res = await api.get(`/api/projects/${projectId}`);
-        setProject(res.data.data);
-      } catch (err) {
-        console.error("Failed to load project", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProject();
-  }, [projectId, contextProject]);
-
-  if (loading) {
+  if (!project) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
         Loading project…
@@ -37,24 +11,25 @@ export default function ProjectDashboard() {
     );
   }
 
-  if (!project) {
-    return (
-      <div className="flex items-center justify-center h-full text-red-400">
-        Project not found
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-2">
-      <h1 className="text-2xl font-semibold">
-        {project.name}
-      </h1>
-      <p className="text-gray-500">
-        Monitor your payment activity for this project
-      </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">{project.name}</h1>
+          <p className="text-gray-500">Project dashboard</p>
+        </div>
 
-      {/* Stats + charts come next step */}
+        <Link
+          to={`/projects/${project._id}/test-payment`}
+          className="px-4 py-2 bg-black text-white rounded hover:bg-gray-900"
+        >
+          Test Payment
+        </Link>
+      </div>
+
+      <div className="bg-white border rounded-lg p-6 text-gray-500">
+        Stats will appear here next.
+      </div>
     </div>
   );
 }
